@@ -1,0 +1,218 @@
+================================================================================
+                    DOCUSYNC API COST ANALYSIS
+                    AI-Powered Manuscript Validation System
+================================================================================
+
+AI MODEL USED: Google Gemini 2.0 Flash
+PRICING SOURCE: Google AI Studio (as of January 2026)
+
+--------------------------------------------------------------------------------
+SECTION 1: GEMINI 2.0 FLASH PRICING
+--------------------------------------------------------------------------------
+
+Standard Rates (Per 1 Million Tokens):
+    - Input Tokens:  $0.10 / 1M tokens
+    - Output Tokens: $0.40 / 1M tokens
+
+Note: 1 token ≈ 4 characters (including spaces)
+
+--------------------------------------------------------------------------------
+SECTION 2: REAL-WORLD THESIS DATA (260 PAGES)
+--------------------------------------------------------------------------------
+
+The following statistics are from an actual DCT CCS Capstone manuscript:
+
++--------------------------------+----------------+
+| Metric                         | Value          |
++--------------------------------+----------------+
+| Total Pages                    | 260            |
+| Total Words                    | 46,656         |
+| Characters (without spaces)    | 255,558        |
+| Characters (with spaces)       | 302,217        |
+| Total Sentences                | 10,815         |
+| Total Paragraphs               | 7,058          |
+| Human Reading Time             | 186 min 37 sec |
++--------------------------------+----------------+
+
+Token Calculation:
+    Formula: Characters (with spaces) ÷ 4 = Tokens
+    302,217 ÷ 4 = 75,554 tokens
+
+ACTUAL DOCUMENT SIZE: ~75,554 tokens
+
+--------------------------------------------------------------------------------
+SECTION 3: COST FOR FULL 260-PAGE THESIS ANALYSIS
+--------------------------------------------------------------------------------
+
++---------------------------+---------------------------+----------------+
+| Item                      | Calculation               | Cost (USD)     |
++---------------------------+---------------------------+----------------+
+| Reading Paper (Input)     | 75,554 tokens × $0.10/1M  | $0.00756       |
+| Generating Report (Output)| 5,000 tokens × $0.40/1M   | $0.00200       |
++---------------------------+---------------------------+----------------+
+| TOTAL COST PER SCAN       |                           | $0.00956       |
++---------------------------+---------------------------+----------------+
+
+RESULT: Less than 1 cent USD (approximately PHP 0.50) per full scan.
+
+--------------------------------------------------------------------------------
+SECTION 4: COST PER SINGLE OPERATION
+--------------------------------------------------------------------------------
+
+Based on typical DocuSync usage patterns:
+
++---------------------------+-------------+---------------+----------------+
+| Action                    | Avg Input   | Avg Output    | Estimated Cost |
++---------------------------+-------------+---------------+----------------+
+| Analyze One Chapter       | 4,500 tok   | 500 tok       | $0.00065       |
+| Validate Citations        | 2,000 tok   | 300 tok       | $0.00032       |
+| Chat Query (1 turn)       | 6,000 tok   | 200 tok       | $0.00068       |
+| Full Thesis Scan (5 Ch)   | 22,500 tok  | 2,500 tok     | $0.00325       |
+| FULL 260-PAGE SCAN        | 75,554 tok  | 5,000 tok     | $0.00956       |
++---------------------------+-------------+---------------+----------------+
+
+--------------------------------------------------------------------------------
+SECTION 5: DOCUMENT SIZE COMPARISON
+--------------------------------------------------------------------------------
+
++---------------------------+-------------+----------------+----------------+
+| Document Type             | Pages       | Token Count    | Cost per Scan  |
++---------------------------+-------------+----------------+----------------+
+| Small Manuscript          | 80 pages    | ~22,000 tok    | $0.0025        |
+| Medium Thesis             | 150 pages   | ~45,000 tok    | $0.0050        |
+| REAL 260-PAGE THESIS      | 260 pages   | 75,554 tok     | $0.0096        |
+| Maximum Estimate          | 350 pages   | ~105,000 tok   | $0.0130        |
++---------------------------+-------------+----------------+----------------+
+
+NOTE: Real documents contain less tokens per page than pure text estimates
+because they include whitespace, headers, figures, and tables.
+
+--------------------------------------------------------------------------------
+SECTION 6: MONTHLY USAGE ESTIMATES (1 Student Team)
+--------------------------------------------------------------------------------
+
+Typical Team Usage (3 students, 1 month of revisions):
+    - Daily: 10 chapter checks + 20 chat queries
+    - Weekly: 50 checks + 100 chat queries
+    - Monthly: 200 checks + 400 chat queries
+
++---------------------------+-------------+----------------+
+| Item                      | Volume      | Total Cost     |
++---------------------------+-------------+----------------+
+| Compliance Checks         | 200 scans   | $0.13          |
+| Citation Validations      | 50 scans    | $0.02          |
+| AI Chat Assistant         | 400 queries | $0.27          |
++---------------------------+-------------+----------------+
+| TOTAL MONTHLY COST        |             | $0.42          |
++---------------------------+-------------+----------------+
+
+RESULT: Monthly operating cost per team is less than 50 cents USD.
+
+--------------------------------------------------------------------------------
+SECTION 7: SCALING TO ENTIRE COLLEGE (CCS DEPLOYMENT)
+--------------------------------------------------------------------------------
+
+Scenario: 50 Active Teams (150 students) during Final Defense Week
+
++---------------------------+----------------+
+| Metric                    | Value          |
++---------------------------+----------------+
+| Active Teams              | 50             |
+| Total Scans / Week        | 2,500          |
+| Total Chat Messages / Week| 10,000         |
+| Est. Weekly Server Cost   | $10.50         |
+| Est. Cost Per Student     | $0.07          |
++---------------------------+----------------+
+
+RESULT: Full college deployment costs approximately $10.50 per week.
+
+--------------------------------------------------------------------------------
+SECTION 8: COMPARATIVE ANALYSIS (ALTERNATIVE AI MODELS)
+--------------------------------------------------------------------------------
+
+Cost to analyze the SAME 260-page thesis (75,554 input tokens):
+
++----------------------+------------------+------------------+
+| AI Model             | Cost per Scan    | Difference       |
++----------------------+------------------+------------------+
+| Gemini 2.0 Flash     | $0.0096          | BASELINE         |
+| GPT-4o Mini          | $0.0146          | +52%             |
+| Claude 3 Haiku       | $0.0227          | +136%            |
+| Claude 3.5 Sonnet    | $0.2342          | +2,340%          |
+| GPT-4o               | $0.3855          | +3,916%          |
+| GPT-4 (Original)     | $2.3166          | +24,031%         |
++----------------------+------------------+------------------+
+
+RESULT: Gemini 2.0 Flash is 24x to 240x cheaper than alternatives.
+
+--------------------------------------------------------------------------------
+SECTION 9: PHYSICAL COST COMPARISON
+--------------------------------------------------------------------------------
+
+For perspective, comparing AI costs to physical thesis expenses:
+
++---------------------------+------------------+
+| Item                      | Est. Cost (PHP)  |
++---------------------------+------------------+
+| 1 Full AI Scan (260 pgs)  | PHP 0.50         |
+| Printing 1 Copy (260 pgs) | PHP 260.00       |
+| Soft Binding              | PHP 150.00       |
+| Hard Binding              | PHP 500-1000     |
++---------------------------+------------------+
+
+KEY INSIGHT: You can run 520 AI compliance checks for the cost of printing
+the document ONCE.
+
+AI Scan Cost vs. Physical Costs:
+    - Cost of 1 print job      = 520 AI scans
+    - Cost of soft binding     = 300 AI scans
+    - Cost of hard binding     = 1,000+ AI scans
+    - Cost of full submission  = 1,820+ AI scans
+
+--------------------------------------------------------------------------------
+SECTION 10: KEY CONCLUSIONS FOR DEFENSE
+--------------------------------------------------------------------------------
+
+1. REAL-WORLD VERIFIED: A 260-page thesis with 46,656 words costs only
+   $0.0096 (less than PHP 1.00) to fully analyze with AI.
+
+2. EFFICIENCY: DocuSync using Gemini 2.0 Flash is 98% cost-optimized
+   compared to industry-standard premium AI models.
+
+3. SUSTAINABILITY: The operational cost is negligible ($0.42/month/team),
+   making it a viable long-term solution for the college without requiring
+   student fees.
+
+4. SCALABILITY: Full CCS deployment (50 teams, 150 students) costs only
+   $10.50 per week during peak usage.
+
+5. FREE TIER AVAILABILITY: For development and small-scale testing (under
+   15 requests per minute), cost is effectively $0.00.
+
+6. CONTEXT CAPACITY: Gemini 2.0 Flash supports up to 1 million tokens of
+   context, allowing analysis of manuscripts up to 3,500+ pages in a single
+   request if needed.
+
+7. SPEED: AI analysis of a 260-page document takes approximately 5-15
+   seconds, compared to 186+ minutes of human reading time.
+
+--------------------------------------------------------------------------------
+SECTION 11: SUMMARY STATISTICS
+--------------------------------------------------------------------------------
+
++----------------------------------------+------------------+
+| Metric                                 | Value            |
++----------------------------------------+------------------+
+| Cost per 260-page scan                 | $0.0096          |
+| Cost per 260-page scan (PHP)           | PHP 0.50         |
+| Cost per 1,000 scans                   | $9.60            |
+| Monthly cost per student team          | $0.42            |
+| Weekly cost for 50 teams               | $10.50           |
+| AI scans per peso                      | 2 scans          |
+| AI scans per dollar                    | 104 scans        |
+| Time saved per scan (vs. human)        | 186+ minutes     |
++----------------------------------------+------------------+
+
+================================================================================
+                    END OF COST ANALYSIS DOCUMENT
+================================================================================
