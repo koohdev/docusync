@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, Check, Loader2, CloudUpload, FileText, History, BookOpen, ChevronRight } from 'lucide-react';
+import { Upload, Check, Loader2, CloudUpload, FileText, History, BookOpen, ChevronRight, FileType, AlertCircle, Clock, ArrowRight } from 'lucide-react';
 import { runFullComplianceCheck } from '../services/complianceEngine';
 import { submissionStore } from '../services/submissionStore';
 import AnalysisReport from './AnalysisReport';
@@ -104,78 +104,131 @@ const DashboardStudent: React.FC = () => {
     };
 
     const getScoreVariant = (score: number) => {
-        if (score >= 80) return 'success';
-        if (score >= 60) return 'warning';
-        return 'error';
+        if (score >= 80) return 'text-emerald-600 bg-emerald-50 border-emerald-200';
+        if (score >= 60) return 'text-amber-600 bg-amber-50 border-amber-200';
+        return 'text-rose-600 bg-rose-50 border-rose-200';
     };
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
     };
 
-    return (
-        <div className="px-8 py-6 max-w-[1400px] mx-auto min-h-[calc(100vh-64px)]">
-            
-            {/* When report is showing, we hide the sidebar to give the report full focus */}
-            <div className={`flex flex-col ${!reportData ? 'lg:flex-row' : ''} gap-8`}>
-                
-                {/* Main Content Area */}
-                <div className="flex-1 min-w-0">
-                    {!reportData && (
-                        <div className="mb-6">
-                            <h1 className="text-2xl font-bold text-foreground">Compliance Check</h1>
-                            <p className="text-muted-foreground mt-1">Upload your manuscript chapter or full draft for instant verification.</p>
-                        </div>
-                    )}
+    const GuidelinesCard = () => (
+        <div className="bg-linear-to-br from-slate-900 to-slate-800 rounded-xl p-6 text-white shadow-xl">
+             <div className="flex items-center gap-3 mb-6">
+                 <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center backdrop-blur-sm">
+                     <BookOpen className="w-5 h-5 text-blue-300" />
+                 </div>
+                 <div>
+                     <h3 className="font-bold text-lg leading-tight">Quick Guide</h3>
+                     <p className="text-xs text-slate-400">CCS Capstone Standards</p>
+                 </div>
+             </div>
+             
+             <div className="space-y-4">
+                 {[
+                      { label: 'Margins', value: '1.5" L, 1.0" R' },
+                      { label: 'Font', value: 'Times New Roman, 12pt' },
+                      { label: 'Spacing', value: 'Double-spaced' },
+                      { label: 'Paper Size', value: 'Letter (8.5" x 11")' },
+                  ].map((req, idx) => (
+                      <div key={idx} className="flex items-center justify-between text-sm group cursor-default">
+                          <span className="text-slate-300 group-hover:text-white transition-colors">{req.label}</span>
+                          <span className="font-mono text-xs bg-white/10 px-2 py-1 rounded text-blue-200 border border-white/5">
+                              {req.value}
+                          </span>
+                      </div>
+                  ))}
+             </div>
+             
+             <div className="mt-6 pt-4 border-t border-white/10">
+                 <button className="w-full text-xs font-semibold text-blue-300 hover:text-white transition-colors flex items-center justify-center gap-2">
+                     View Full Guidelines <ArrowRight className="w-3 h-3" />
+                 </button>
+             </div>
+        </div>
+    );
 
-                    {!reportData ? (
-                        <Card 
-                            className={`border-2 border-dashed transition-all duration-200 ${
-                                isDragOver 
-                                    ? 'border-primary bg-primary/5 scale-[1.01]' 
-                                    : 'border-border hover:border-primary/50 hover:bg-accent/30'
+    return (
+        <div className="px-6 py-8 mx-auto max-w-400 min-h-[calc(100vh-64px)] font-sans">
+            
+            {/* If Report is Active, Show Full Width Report */}
+            {reportData ? (
+                <div className="animate-in fade-in slide-in-from-bottom-8 duration-700">
+                    <AnalysisReport 
+                        score={reportData.score}
+                        status={reportData.score > 80 ? ComplianceStatus.COMPLIANT : ComplianceStatus.NON_COMPLIANT}
+                        issues={reportData.issues}
+                        metadata={reportData.metadata}
+                        onClose={() => setReportData(null)}
+                    />
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                    
+                    {/* Left Column: Welcome & Upload */}
+                    <div className="lg:col-span-8 flex flex-col gap-8">
+                        <div>
+                            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Compliance Check</h1>
+                            <p className="text-slate-500 mt-2 text-lg">
+                                Ready to verify your manuscript? detailed scan against <span className="font-semibold text-slate-700">DCT CCS Guidelines</span>.
+                            </p>
+                        </div>
+
+                        {/* Upload Card */}
+                        <div 
+                            className={`border-2 border-dashed rounded-2xl transition-all duration-300 relative overflow-hidden group
+                            ${isDragOver 
+                                ? 'border-blue-500 bg-blue-50/50 scale-[1.01] ring-4 ring-blue-500/10' 
+                                : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50 shadow-sm hover:shadow-md'
                             } ${isAnalyzing ? 'pointer-events-none' : 'cursor-pointer'}`}
                             onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
                             onDragLeave={() => setIsDragOver(false)}
                             onDrop={handleDrop}
                         >
-                            <CardContent className="p-12 text-center relative">
+                            <div className="p-12 md:p-16 text-center relative z-10">
                                 {isAnalyzing ? (
-                                    <div className="flex flex-col items-center gap-6 py-8">
+                                    <div className="flex flex-col items-center gap-8 py-4">
                                         <div className="relative">
-                                            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                                                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                                            <div className="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center shadow-inner">
+                                                <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
                                             </div>
-                                            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
+                                            <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold ring-4 ring-white">
                                                 {analysisProgress}%
                                             </div>
                                         </div>
-                                        <div className="space-y-3 w-full max-w-xs">
-                                            <p className="font-semibold text-foreground">{uploadStatus}</p>
-                                            <Progress value={analysisProgress} className="h-2" />
-                                            <p className="text-sm text-muted-foreground">This may take a few seconds</p>
+                                        <div className="space-y-4 w-full max-w-sm">
+                                            <div>
+                                                <p className="font-bold text-slate-900 text-lg mb-1">{uploadStatus}</p>
+                                                <p className="text-sm text-slate-500">Comparing with 50+ formatting rules...</p>
+                                            </div>
+                                            <Progress value={analysisProgress} className="h-2 bg-slate-100" indicatorClassName="bg-blue-600" />
                                         </div>
                                     </div>
                                 ) : (
                                     <>
-                                        <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 transition-all duration-200 ${
-                                            isDragOver 
-                                                ? 'bg-primary text-primary-foreground scale-110' 
-                                                : 'bg-primary/10 text-primary'
-                                        }`}>
-                                            <CloudUpload className="w-10 h-10" />
+                                        <div className={`w-24 h-24 rounded-3xl flex items-center justify-center mx-auto mb-8 transition-transform duration-300 shadow-xl shadow-blue-900/5 
+                                            ${isDragOver ? 'bg-blue-600 text-white rotate-6 scale-110' : 'bg-white text-blue-600 border border-slate-100'}
+                                        `}>
+                                            <CloudUpload className="w-12 h-12" />
                                         </div>
-                                        <h3 className="text-xl font-semibold text-foreground mb-2">
-                                            {isDragOver ? 'Drop your file here' : 'Upload Manuscript'}
+                                        
+                                        <h3 className="text-2xl font-bold text-slate-900 mb-3">
+                                            {isDragOver ? 'Drop file to scan' : 'Upload Manuscript'}
                                         </h3>
-                                        <p className="text-muted-foreground mb-8 max-w-sm mx-auto">
-                                            Drag and drop your <span className="font-medium">.DOCX</span> or <span className="font-medium">.PDF</span> file here, or click to browse.
+                                        <p className="text-slate-500 mb-8 max-w-md mx-auto leading-relaxed">
+                                            Support for <span className="font-semibold text-slate-700">.DOCX</span> and <span className="font-semibold text-slate-700">.PDF</span> files. 
+                                            Maximum file size 25MB.
                                         </p>
-                                        <Button size="xl" className="shadow-lg shadow-primary/20">
-                                            <Upload className="w-4 h-4" />
-                                            Select File
-                                        </Button>
+
+                                        <div className="flex items-center justify-center gap-4">
+                                            <Button size="xl" className="bg-slate-900 hover:bg-slate-800 text-white px-8 h-12 rounded-xl shadow-lg hover:shadow-xl transition-all">
+                                                <Upload className="w-4 h-4 mr-2" />
+                                                Browse Files
+                                            </Button>
+                                        </div>
+
                                         <input 
                                             type="file" 
                                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
@@ -185,118 +238,96 @@ const DashboardStudent: React.FC = () => {
                                         />
                                     </>
                                 )}
-                            </CardContent>
-                        </Card>
-                    ) : (
-                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                            <AnalysisReport 
-                                score={reportData.score}
-                                status={reportData.score > 80 ? ComplianceStatus.COMPLIANT : ComplianceStatus.NON_COMPLIANT}
-                                issues={reportData.issues}
-                                metadata={reportData.metadata}
-                                onClose={() => setReportData(null)}
-                            />
+                            </div>
+                            
+                            {/* Decorative Background Elements */}
+                            {!isAnalyzing && (
+                                <>
+                                    <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-blue-500 via-emerald-500 to-blue-500 opacity-20"></div>
+                                    <div className="absolute -left-16 -bottom-16 w-64 h-64 bg-blue-50 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
+                                    <div className="absolute -right-16 -top-16 w-64 h-64 bg-emerald-50 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
+                                </>
+                            )}
                         </div>
-                    )}
-                </div>
 
-                {/* Sidebar - Only visible when NO report is showing */}
-                {!reportData && (
-                    <div className="w-full lg:w-80 shrink-0 space-y-6">
-                        {/* Quick Guide Card */}
-                        <Card>
-                            <CardHeader className="pb-4">
-                                <CardTitle className="text-base flex items-center gap-2">
-                                    <BookOpen className="w-4 h-4 text-primary" />
-                                    Quick Requirements
-                                </CardTitle>
-                                <CardDescription>DCT CCS Capstone standards</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                {[
-                                    { label: 'Margins', value: '1.5" Left, 1.0" Right' },
-                                    { label: 'Font', value: 'Times New Roman, 12pt' },
-                                    { label: 'Abstract', value: '150-250 words' },
-                                    { label: 'Spacing', value: 'Double-spaced' },
-                                ].map((req, idx) => (
-                                    <div key={idx} className="flex items-center justify-between text-sm">
-                                        <span className="text-muted-foreground">{req.label}</span>
-                                        <Badge variant="secondary" className="font-mono text-xs">
-                                            {req.value}
-                                        </Badge>
+                         {/* Supported Features Grid */}
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {[
+                                { icon: FileType, title: 'Smart Parsing', desc: 'Auto-detects chapters & sections' },
+                                { icon: AlertCircle, title: 'Format Check', desc: 'Validates margins, font, & spacing' },
+                                { icon: Check, title: 'Tone Analysis', desc: 'Ensures academic writing style' }
+                            ].map((f, i) => (
+                                <div key={i} className="bg-white border border-slate-100 p-4 rounded-xl flex items-start gap-4 hover:border-slate-200 transition-colors">
+                                    <div className="p-2 bg-slate-50 rounded-lg text-slate-600">
+                                        <f.icon className="w-5 h-5" />
                                     </div>
-                                ))}
-                            </CardContent>
-                        </Card>
-
-                        {/* History List */}
-                        <Card>
-                            <CardHeader className="pb-4">
-                                <div className="flex items-center justify-between">
-                                    <CardTitle className="text-base flex items-center gap-2">
-                                        <History className="w-4 h-4 text-primary" />
-                                        Recent Scans
-                                    </CardTitle>
-                                    {history.length > 0 && (
-                                        <Badge variant="outline" className="text-xs">
-                                            {history.length}
-                                        </Badge>
-                                    )}
+                                    <div>
+                                        <h4 className="font-semibold text-slate-900 text-sm">{f.title}</h4>
+                                        <p className="text-xs text-slate-500 mt-0.5">{f.desc}</p>
+                                    </div>
                                 </div>
-                            </CardHeader>
-                            <CardContent className="p-0">
+                            ))}
+                         </div>
+                    </div>
+
+                    {/* Right Column: Sidebar */}
+                    <div className="lg:col-span-4 flex flex-col gap-6">
+                        
+                        <GuidelinesCard />
+
+                        {/* Recent Activity Feed */}
+                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                                    <History className="w-4 h-4 text-slate-500" />
+                                    Recent Scans
+                                </h3>
+                                {history.length > 0 && <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">{history.length}</span>}
+                            </div>
+                            
+                            <div className="max-h-100 overflow-y-auto p-2 custom-scrollbar">
                                 {history.length === 0 ? (
-                                    <div className="py-8 text-center px-6">
-                                        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
-                                            <FileText className="w-5 h-5 text-muted-foreground" />
+                                    <div className="py-12 text-center">
+                                        <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                                            <Clock className="w-5 h-5 text-slate-300" />
                                         </div>
-                                        <p className="text-muted-foreground text-sm">No scans yet</p>
-                                        <p className="text-muted-foreground/60 text-xs mt-1">Upload a document to get started</p>
+                                        <p className="text-sm text-slate-400 font-medium">No history yet</p>
                                     </div>
                                 ) : (
-                                    <ScrollArea className="h-[280px]">
-                                        <div className="px-2 pb-2">
-                                            {history.slice(0, 10).map((item, idx) => (
-                                                <React.Fragment key={item.id}>
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <button 
-                                                                onClick={() => handleViewHistoryItem(item)}
-                                                                className="w-full text-left p-3 rounded-lg hover:bg-accent transition-colors group flex items-center justify-between"
-                                                            >
-                                                                <div className="min-w-0 flex-1 mr-3">
-                                                                    <div className="text-sm font-medium text-foreground truncate">
-                                                                        {item.fileName}
-                                                                    </div>
-                                                                    <div className="text-xs text-muted-foreground mt-0.5">
-                                                                        {formatDate(item.date)}
-                                                                    </div>
-                                                                </div>
-                                                                <div className="flex items-center gap-2">
-                                                                    <Badge variant={getScoreVariant(item.score)} className="font-bold">
-                                                                        {item.score}%
-                                                                    </Badge>
-                                                                    <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                                </div>
-                                                            </button>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent side="left">
-                                                            Click to view report
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                    {idx < history.slice(0, 10).length - 1 && (
-                                                        <Separator className="mx-3" />
-                                                    )}
-                                                </React.Fragment>
-                                            ))}
-                                        </div>
-                                    </ScrollArea>
+                                    <div className="space-y-1">
+                                        {history.map((item) => (
+                                            <button 
+                                                key={item.id}
+                                                onClick={() => handleViewHistoryItem(item)}
+                                                className="w-full text-left p-3 rounded-lg hover:bg-slate-50 transition-all group border border-transparent hover:border-slate-100 flex items-center justify-between"
+                                            >
+                                                <div className="flex items-center gap-3 overflow-hidden">
+                                                     <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                                                         item.score >= 80 ? 'bg-emerald-500' : item.score >= 60 ? 'bg-amber-500' : 'bg-rose-500'
+                                                     }`}></div>
+                                                     <div className="min-w-0">
+                                                         <p className="text-sm font-semibold text-slate-700 truncate group-hover:text-blue-600 transition-colors">
+                                                             {item.fileName}
+                                                         </p>
+                                                         <p className="text-[10px] text-slate-400 mt-0.5 font-medium">
+                                                             {formatDate(item.date)}
+                                                         </p>
+                                                     </div>
+                                                </div>
+                                                
+                                                <div className={`px-2 py-1 rounded text-xs font-bold border ${getScoreVariant(item.score)}`}>
+                                                    {item.score}
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
                                 )}
-                            </CardContent>
-                        </Card>
+                            </div>
+                        </div>
+
                     </div>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 };

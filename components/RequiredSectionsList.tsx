@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { CheckCircle2, ChevronDown } from 'lucide-react';
+import { CheckCircle2, ChevronDown, Circle, AlertCircle } from 'lucide-react';
 import { ComplianceMetadata } from '../types';
 
 interface RequiredSectionsListProps {
     metadata?: ComplianceMetadata;
+    onSelectSection?: (sectionName: string) => void;
+    selectedSection?: string | null;
 }
 
-const RequiredSectionsList: React.FC<RequiredSectionsListProps> = ({ metadata }) => {
+const RequiredSectionsList: React.FC<RequiredSectionsListProps> = ({ metadata, onSelectSection, selectedSection }) => {
     const [expandedChapters, setExpandedChapters] = useState<Set<number>>(new Set([1, 2, 3, 4, 5]));
     
     // Helper function to check if a section is found
@@ -100,60 +102,76 @@ const RequiredSectionsList: React.FC<RequiredSectionsListProps> = ({ metadata })
         'Appendices'
     ];
 
-    return (
-        <div className="space-y-1 text-sm">
-            {/* Pre-chapter sections */}
-            {sections.map((section, idx) => {
-                const found = isSectionFound(section.name);
-                return (
-                    <div key={`pre-${idx}`} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-slate-50 transition-colors">
-                        <span className={`text-xs ${found ? 'text-slate-700' : 'text-slate-400'}`}>{section.name}</span>
-                        <CheckCircle2 className={`w-3.5 h-3.5 ${found ? 'text-emerald-500' : 'text-slate-300'}`} />
-                    </div>
-                );
-            })}
+    const SectionItem = ({ name }: { name: string }) => {
+        const found = isSectionFound(name);
+        const isSelected = selectedSection === name;
 
-            {/* Chapters */}
-            {chapters.map((chapter) => (
-                <div key={`chapter-${chapter.num}`} className="border-t border-slate-100">
-                    <button
-                        onClick={() => toggleChapter(chapter.num)}
-                        className="w-full flex items-center justify-between py-2 px-2 rounded hover:bg-slate-50 transition-colors group"
-                    >
-                        <span className="font-semibold text-slate-700 text-xs">{chapter.name}</span>
-                        <ChevronDown 
-                            className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
-                                expandedChapters.has(chapter.num) ? 'rotate-180' : ''
-                            }`} 
-                        />
-                    </button>
-                    {expandedChapters.has(chapter.num) && (
-                        <div className="ml-3 space-y-0.5 pb-1">
-                            {chapter.items.map((item, idx) => {
-                                const found = isSectionFound(item);
-                                return (
-                                    <div key={`ch${chapter.num}-${idx}`} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-slate-50 transition-colors">
-                                        <span className={`text-xs ${found ? 'text-slate-700' : 'text-slate-400'}`}>{item}</span>
-                                        <CheckCircle2 className={`w-3.5 h-3.5 ${found ? 'text-emerald-500' : 'text-slate-300'}`} />
-                                    </div>
-                                );
-                            })}
-                        </div>
+        return (
+            <button
+                onClick={() => onSelectSection?.(name)}
+                className={`w-full flex items-center justify-between py-2 px-3 rounded-lg text-left transition-all duration-200 group
+                    ${isSelected 
+                        ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-200' 
+                        : 'hover:bg-slate-50 text-slate-600'
+                    }`}
+            >
+                <div className="flex items-center gap-3">
+                    {found ? (
+                        <CheckCircle2 className={`w-4 h-4 ${isSelected ? 'text-blue-600' : 'text-emerald-500'}`} />
+                    ) : (
+                        <Circle className={`w-4 h-4 ${isSelected ? 'text-blue-400' : 'text-slate-300'}`} />
                     )}
+                    <span className={`text-xs font-medium ${isSelected ? 'text-blue-900' : 'text-slate-600 group-hover:text-slate-900'}`}>
+                        {name}
+                    </span>
                 </div>
-            ))}
+                {!found && (
+                    <div className="w-1.5 h-1.5 rounded-full bg-rose-400" title="Missing Section" />
+                )}
+            </button>
+        );
+    };
 
-            {/* End sections */}
-            <div className="border-t border-slate-100">
-                {endSections.map((section, idx) => {
-                    const found = isSectionFound(section);
-                    return (
-                        <div key={`end-${idx}`} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-slate-50 transition-colors">
-                            <span className={`text-xs ${found ? 'text-slate-700' : 'text-slate-400'}`}>{section}</span>
-                            <CheckCircle2 className={`w-3.5 h-3.5 ${found ? 'text-emerald-500' : 'text-slate-300'}`} />
-                        </div>
-                    );
-                })}
+    return (
+        <div className="space-y-4">
+            <div className="space-y-1">
+                <p className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Preliminaries</p>
+                {sections.map((section, idx) => (
+                    <SectionItem key={`pre-${idx}`} name={section.name} />
+                ))}
+            </div>
+
+            <div className="space-y-2">
+                <p className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-4">Main Body</p>
+                {chapters.map((chapter) => (
+                    <div key={`chapter-${chapter.num}`} className="rounded-xl overflow-hidden border border-slate-100/50 bg-white/50">
+                        <button
+                            onClick={() => toggleChapter(chapter.num)}
+                            className="w-full flex items-center justify-between py-2.5 px-3 hover:bg-slate-50 transition-colors"
+                        >
+                            <span className="font-semibold text-slate-700 text-xs">{chapter.name}</span>
+                            <ChevronDown 
+                                className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
+                                    expandedChapters.has(chapter.num) ? 'rotate-180' : ''
+                                }`} 
+                            />
+                        </button>
+                        {expandedChapters.has(chapter.num) && (
+                            <div className="bg-slate-50/50 space-y-0.5 p-1 border-t border-slate-100">
+                                {chapter.items.map((item, idx) => (
+                                    <SectionItem key={`ch${chapter.num}-${idx}`} name={item} />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
+
+            <div className="space-y-1">
+                <p className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-4">End Matter</p>
+                {endSections.map((section, idx) => (
+                    <SectionItem key={`end-${idx}`} name={section} />
+                ))}
             </div>
         </div>
     );

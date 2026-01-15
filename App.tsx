@@ -28,7 +28,7 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-background flex flex-col font-sans">
       {/* Authenticated Navbar - Clean & Modern */}
       <header className="bg-card border-b border-border sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto h-16 flex items-center justify-between">
+        <div className="max-w-450 px-8 mx-auto h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center text-primary-foreground">
               <BookOpenCheck className="w-5 h-5" />

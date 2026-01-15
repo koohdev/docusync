@@ -149,7 +149,7 @@ const DashboardAdviser: React.FC = () => {
     );
 
     return (
-        <div className="px-8 py-6 md:py-8 max-w-[1400px] mx-auto space-y-8">
+        <div className="px-8 py-6 md:py-8 max-w-450 mx-auto space-y-8">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
                 <div>

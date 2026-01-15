@@ -33,7 +33,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
     <div className="min-h-screen bg-background flex flex-col font-sans selection:bg-primary/20 selection:text-primary">
       {/* Navbar */}
       <header className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="max-w-[1400px] mx-auto px-8 h-16 flex items-center justify-between">
+        <div className="max-w-450 mx-auto px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center text-primary-foreground">
               <BookOpenCheck className="w-5 h-5" />
@@ -64,12 +64,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
 
       <main className="flex-1 pt-16">
         {/* Hero Section */}
-        <section className="relative overflow-hidden pt-20 pb-28 lg:pt-32 lg:pb-40 bg-gradient-to-b from-background to-accent/20">
+        <section className="relative overflow-hidden pt-20 pb-28 lg:pt-32 lg:pb-40 bg-linear-to-b from-background to-accent/20">
           {/* Subtle background decoration */}
           <div className="absolute top-1/3 left-1/4 w-96 h-96 bg-primary/3 rounded-full blur-3xl -z-10 animate-pulse" style={{animationDuration: '4s'}}></div>
           <div className="absolute bottom-1/4 right-1/3 w-80 h-80 bg-primary/4 rounded-full blur-3xl -z-10 animate-pulse" style={{animationDuration: '6s'}}></div>
           
-          <div className="max-w-[1400px] mx-auto px-8 text-center">
+          <div className="max-w-450 mx-auto px-8 text-center">
             <Badge variant="secondary" className="mb-8 gap-2 px-4 py-2 animate-in fade-in slide-in-from-bottom-4 duration-700 shadow-sm">
               <Sparkles className="w-3.5 h-3.5 text-primary" />
               <span className="font-semibold">AI-Powered Tone Analysis</span>
@@ -124,7 +124,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                     <Card className="border-destructive/50 bg-destructive/5 mt-6">
                       <CardContent className="p-4">
                         <div className="flex gap-3">
-                          <div className="w-6 h-6 rounded-full bg-destructive/20 flex items-center justify-center flex-shrink-0">
+                          <div className="w-6 h-6 rounded-full bg-destructive/20 flex items-center justify-center shrink-0">
                             <span className="text-destructive text-xs font-bold">!</span>
                           </div>
                           <div>
@@ -166,7 +166,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
 
         {/* Feature Grid */}
         <section id="features" className="bg-accent/30 py-24 border-t border-border">
-          <div className="max-w-[1400px] mx-auto px-8">
+          <div className="max-w-450 mx-auto px-8">
             <div className="text-center mb-16">
               <Badge variant="outline" className="mb-4">Features</Badge>
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
@@ -198,7 +198,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
 
         {/* Trust Section */}
         <section className="py-20 border-t border-border">
-          <div className="max-w-[1400px] mx-auto px-8">
+          <div className="max-w-450 mx-auto px-8">
             <div className="flex flex-col md:flex-row items-center justify-center gap-8 text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Shield className="w-5 h-5 text-primary" />
@@ -220,7 +220,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
       </main>
 
       <footer className="bg-card border-t border-border py-12">
-        <div className="max-w-[1400px] mx-auto px-8">
+        <div className="max-w-450 mx-auto px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground">

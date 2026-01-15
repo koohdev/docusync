@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AuditIssue, ComplianceStatus, ComplianceMetadata } from '../types';
 import { 
+
     CheckCircle2, 
     ArrowLeft, 
     Printer, 
@@ -15,7 +16,8 @@ import {
     AlignLeft,
     Hash,
     ChevronDown,
-    MessageCircle
+    MessageCircle,
+    XCircle
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import jspdfAutotable from 'jspdf-autotable';
@@ -33,6 +35,7 @@ interface AnalysisReportProps {
 
 const AnalysisReport: React.FC<AnalysisReportProps> = ({ score, status, issues, metadata, onClose }) => {
     const [filter, setFilter] = useState<'ALL' | 'CRITICAL' | 'FORMATTING' | 'GRAMMAR'>('ALL');
+    const [selectedSection, setSelectedSection] = useState<string | null>(null);
     const [chatOpen, setChatOpen] = useState(false);
     const [chatQuery, setChatQuery] = useState<string | undefined>(undefined);
 
@@ -89,16 +92,16 @@ const AnalysisReport: React.FC<AnalysisReportProps> = ({ score, status, issues, 
         if (!context) return null;
         const quotedTerms = description.match(/'([^']+)'/g)?.map(s => s.replace(/'/g, '')) || [];
         
-        if (quotedTerms.length === 0) return <span className="text-slate-600">{context}</span>;
+        if (quotedTerms.length === 0) return <span className="text-slate-600 font-mono text-xs leading-relaxed">{context}</span>;
 
         const pattern = new RegExp(`(${quotedTerms.join('|')})`, 'gi');
         const parts = context.split(pattern);
 
         return (
-            <span className="text-slate-600">
+            <span className="text-slate-600 font-mono text-xs leading-relaxed">
                 {parts.map((part, i) => 
                     quotedTerms.some(term => term.toLowerCase() === part.toLowerCase()) ? (
-                        <span key={i} className="bg-red-100 text-red-700 font-semibold px-1 rounded mx-0.5">
+                        <span key={i} className="bg-red-100 text-red-700 font-bold px-1 rounded mx-0.5 border border-red-200">
                             {part}
                         </span>
                     ) : (
@@ -109,248 +112,264 @@ const AnalysisReport: React.FC<AnalysisReportProps> = ({ score, status, issues, 
         );
     };
 
-    // Derived State for Pie Chart
+    // Derived State
     const scoreData = [
         { name: 'Score', value: score },
         { name: 'Remaining', value: 100 - score }
     ];
     const scoreColor = score >= 80 ? '#10b981' : score >= 60 ? '#f59e0b' : '#ef4444';
 
-    const filteredIssues = issues.filter(i => {
-        if (filter === 'ALL') return true;
-        if (filter === 'CRITICAL') return i.severity === 'HIGH';
-        if (filter === 'FORMATTING') return i.type === 'FORMATTING' || i.type === 'STRUCTURE';
-        if (filter === 'GRAMMAR') return ['GRAMMAR', 'TONE', 'BANNED_WORD'].includes(i.type);
-        return true;
-    });
+    const getFilteredIssues = () => {
+        let filtered = issues;
+
+        // Filter by Tab
+        if (filter !== 'ALL') {
+             filtered = filtered.filter(i => {
+                if (filter === 'CRITICAL') return i.severity === 'HIGH';
+                if (filter === 'FORMATTING') return i.type === 'FORMATTING' || i.type === 'STRUCTURE';
+                if (filter === 'GRAMMAR') return ['GRAMMAR', 'TONE', 'BANNED_WORD'].includes(i.type);
+                return true;
+            });
+        }
+
+        // Filter by Selected Section (if applicable)
+        // Note: Assuming 'context' or 'type' might link to section, but we don't have explicit 'section' field in AuditIssue yet.
+        // For now, we'll try to match vaguely if context contains section name, or just placeholder.
+        // Since we don't have explicit linkage, clicking a section in the Sidebar will just act as a "Focus" intent visually for now
+        // UNLESS we can infer it. 
+        // TODO: Suggest to user to add 'section' field to AuditIssue for precise filtering.
+        
+        return filtered;
+    };
+
+    const filteredIssues = getFilteredIssues();
+    const criticalCount = issues.filter(i => i.severity === 'HIGH').length;
 
   return (
-    <div className="bg-slate-50 min-h-screen p-6 space-y-6">
-      <div className="max-w-[1400px] mx-auto animate-in fade-in duration-300 space-y-6">
-      
-      {/* Top Navigation Bar */}
-      <div className="flex items-center justify-between bg-white px-6 py-4 rounded-xl border border-slate-200 shadow-sm">
-        <div className="flex items-center gap-4">
-            <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors">
-                <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div className="h-6 w-px bg-slate-200"></div>
-            <div>
-                <h2 className="text-lg font-bold text-slate-900 leading-tight">Audit Report</h2>
-                <p className="text-xs text-slate-500">Generated {new Date().toLocaleTimeString()}</p>
-            </div>
-        </div>
-        <div className="flex items-center gap-3">
-             <button 
-                onClick={() => { setChatQuery(undefined); setChatOpen(true); }}
-                className="hidden md:flex px-4 py-2 text-sm font-medium text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors items-center gap-2"
-            >
-                <HelpCircle className="w-4 h-4" />
-                Assistant
-            </button>
-            <button 
-                onClick={handleDownloadPdf}
-                className="px-4 py-2 bg-slate-900 text-white hover:bg-slate-800 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm"
-            >
-                <Printer className="w-4 h-4" />
-                <span className="hidden sm:inline">Export PDF</span>
-            </button>
-        </div>
-      </div>
-
-      {/* HUD / Score Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Main Score Card */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex items-center justify-between md:col-span-1 relative overflow-hidden">
-              <div className="z-10">
-                  <span className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Compliance Score</span>
-                  <div className="flex items-baseline gap-1 mt-1">
-                      <span className={`text-4xl font-extrabold ${
-                          score >= 80 ? 'text-emerald-600' : score >= 60 ? 'text-amber-600' : 'text-rose-600'
-                      }`}>
-                          {score}
-                      </span>
-                      <span className="text-slate-400 font-medium">/ 100</span>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-2 font-medium">
-                      {score >= 80 ? 'Excellent work. Ready for submission.' : 
-                       score >= 60 ? 'Needs review before submission.' : 
-                       'Critical revisions required.'}
-                  </p>
-              </div>
-              <div className="h-24 w-24 relative">
-                 <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                        <Pie
-                            data={scoreData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={30}
-                            outerRadius={40}
-                            startAngle={90}
-                            endAngle={-270}
-                            dataKey="value"
-                            stroke="none"
-                        >
-                            <Cell key="score" fill={scoreColor} />
-                            <Cell key="rem" fill="#f1f5f9" />
-                        </Pie>
-                    </PieChart>
-                 </ResponsiveContainer>
-              </div>
-          </div>
-
-          {/* Quick Stats Grid */}
-          <div className="md:col-span-2 grid grid-cols-3 gap-4">
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 flex flex-col justify-center">
-                  <div className="flex items-center gap-2 mb-2 text-slate-500">
-                      <BookOpen className="w-4 h-4" />
-                      <span className="text-xs font-semibold uppercase">Est. Pages</span>
-                  </div>
-                  <span className="text-2xl font-bold text-slate-900">{metadata?.pageCountEstimate || 0}</span>
-              </div>
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 flex flex-col justify-center">
-                  <div className="flex items-center gap-2 mb-2 text-slate-500">
-                      <AlignLeft className="w-4 h-4" />
-                      <span className="text-xs font-semibold uppercase">Abstract Words</span>
-                  </div>
-                  <span className={`text-2xl font-bold ${
-                      (metadata?.abstractWordCount || 0) >= 150 && (metadata?.abstractWordCount || 0) <= 250 
-                      ? 'text-slate-900' 
-                      : 'text-amber-600'
-                  }`}>
-                      {metadata?.abstractWordCount || 0}
-                  </span>
-              </div>
-               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 flex flex-col justify-center">
-                  <div className="flex items-center gap-2 mb-2 text-slate-500">
-                      <Hash className="w-4 h-4" />
-                      <span className="text-xs font-semibold uppercase">Total Issues</span>
-                  </div>
-                  <span className="text-2xl font-bold text-slate-900">{issues.length}</span>
-              </div>
-          </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    <div className="bg-slate-50 h-[calc(100vh-7rem)] w-full flex overflow-hidden font-sans selection:bg-blue-100 selection:text-blue-900 rounded-xl border border-slate-200">
         
-        {/* Main Feed */}
-        <div className="lg:col-span-8 ">
-            
-            {/* Custom Tab Switcher */}
-            <div className="bg-slate-100/50 p-1 rounded-lg inline-flex border border-slate-200">
-                {[
-                    { key: 'ALL', label: 'All Findings' },
-                    { key: 'CRITICAL', label: 'Critical' },
-                    { key: 'FORMATTING', label: 'Formatting' },
-                    { key: 'GRAMMAR', label: 'Grammar & Tone' }
-                ].map((tab) => (
-                    <button
-                        key={tab.key}
-                        onClick={() => setFilter(tab.key as any)}
-                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
-                            filter === tab.key 
-                            ? 'bg-white text-slate-900 shadow-sm ring-1 ring-black/5' 
-                            : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
-                        }`}
-                    >
-                        {tab.label}
-                    </button>
-                ))}
+        {/* Left Sidebar - Navigation & Outline */}
+        <div className="w-80 bg-white border-r border-slate-200 flex flex-col shrink-0 z-20 shadow-xl shadow-slate-200/50">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 backdrop-blur-sm">
+                <button onClick={onClose} className="p-2 -ml-2 hover:bg-slate-200 rounded-lg text-slate-500 transition-colors flex items-center gap-2 group">
+                    <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+                    <span className="text-sm font-semibold">Back to Editor</span>
+                </button>
             </div>
+
+            <div className="p-5 flex-1 overflow-y-auto custom-scrollbar">
+                <div className="mb-6">
+                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Document Structure</h3>
+                    <RequiredSectionsList 
+                        metadata={metadata} 
+                        onSelectSection={setSelectedSection}
+                        selectedSection={selectedSection}
+                    />
+                </div>
+            </div>
+
+            <div className="p-4 border-t border-slate-100 bg-slate-50">
+                 <div className="bg-blue-600 rounded-xl p-4 text-white shadow-lg shadow-blue-600/20 relative overflow-hidden group cursor-pointer"
+                      onClick={() => { setChatQuery(undefined); setChatOpen(true); }}
+                 >
+                     <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                         <MessageCircle className="w-16 h-16" />
+                     </div>
+                     <h4 className="font-bold text-sm mb-1 relative z-10">Compliance Assistant</h4>
+                     <p className="text-xs text-blue-100 relative z-10 mb-3">Ask about formatting rules & guidelines.</p>
+                     <button className="text-[10px] bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full font-semibold transition-colors flex items-center gap-1.5 w-fit">
+                        Open Chat <ArrowLeft className="w-3 h-3 rotate-180" />
+                     </button>
+                 </div>
+            </div>
+        </div>
+
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col h-full overflow-hidden bg-slate-50/50">
             
-            <div className="space-y-4">
-                {filteredIssues.length === 0 ? (
-                    <div className="bg-white rounded-xl border border-dashed border-slate-300 p-12 flex flex-col items-center justify-center text-slate-400">
-                        <CheckCircle2 className="w-12 h-12 text-green-500 mb-3" />
-                        <p className="font-medium text-slate-900">No issues found!</p>
-                        <p className="text-sm">Your manuscript looks clean in this category.</p>
-                    </div>
-                ) : (
-                    filteredIssues.map((issue, idx) => (
-                        <div 
-                            key={idx} 
-                            className={`bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col md:flex-row transition-all hover:shadow-md
-                            ${issue.severity === 'HIGH' ? 'border-l-4 border-l-rose-500' : 
-                              issue.severity === 'MEDIUM' ? 'border-l-4 border-l-amber-500' : 
-                              'border-l-4 border-l-blue-500'}`}
-                        >
-                            <div className="p-5 flex-1">
-                                <div className="flex items-center justify-between mb-2">
-                                    <div className="flex items-center gap-2">
-                                        {issue.severity === 'HIGH' ? <AlertOctagon className="w-4 h-4 text-rose-500" /> :
-                                         issue.severity === 'MEDIUM' ? <AlertTriangle className="w-4 h-4 text-amber-500" /> :
-                                         <Info className="w-4 h-4 text-blue-500" />}
-                                        <span className="font-bold text-slate-800 text-sm tracking-tight">{issue.type.replace(/_/g, ' ')}</span>
-                                    </div>
-                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide ${
-                                        issue.severity === 'HIGH' ? 'bg-rose-50 text-rose-700' :
-                                        issue.severity === 'MEDIUM' ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-blue-700'
-                                    }`}>
-                                        {issue.severity}
-                                    </span>
-                                </div>
-
-                                <p className="text-sm text-slate-600 mb-3">{issue.description}</p>
-                                
-                                {issue.context && (
-                                    <div className="bg-slate-50 border border-slate-200 rounded-md p-3 mb-3 relative group/quote">
-                                        <Quote className="w-3 h-3 text-slate-300 absolute top-2 left-2" />
-                                        <p className="text-xs font-mono text-slate-600 pl-4 leading-relaxed">
-                                            {renderHighlightedContext(issue.context, issue.description)}
-                                        </p>
-                                    </div>
-                                )}
-                                
-                                <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-50">
-                                     {issue.suggestion ? (
-                                        <div className="flex gap-2 items-center text-xs text-emerald-700 bg-emerald-50 px-2 py-1.5 rounded border border-emerald-100 max-w-[70%]">
-                                            <CheckCircle2 className="w-3 h-3 shrink-0" />
-                                            <span className="font-medium truncate">{issue.suggestion}</span>
-                                        </div>
-                                     ) : <span></span>}
-
-                                    <button 
-                                        onClick={() => handleExplainIssue(issue)}
-                                        className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1"
+            {/* Header / Hero */}
+            <header className="bg-white border-b border-slate-200 px-8 py-6 shrink-0 z-10">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="flex items-center gap-6">
+                        <div className="relative w-20 h-20 shrink-0">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={scoreData}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={32}
+                                        outerRadius={40}
+                                        startAngle={90}
+                                        endAngle={-270}
+                                        dataKey="value"
+                                        stroke="none"
+                                        cornerRadius={5}
+                                        paddingAngle={5}
                                     >
-                                        Explain Rule
-                                    </button>
-                                </div>
+                                        <Cell key="score" fill={scoreColor} />
+                                        <Cell key="rem" fill="#f1f5f9" />
+                                    </Pie>
+                                </PieChart>
+                            </ResponsiveContainer>
+                            <div className="absolute inset-0 flex items-center justify-center flex-col">
+                                <span className={`text-xl font-bold ${
+                                    score >= 80 ? 'text-emerald-600' : score >= 60 ? 'text-amber-600' : 'text-rose-600'
+                                }`}>{score}</span>
                             </div>
                         </div>
-                    ))
+                        <div>
+                            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Compliance Health</h1>
+                            <p className="text-slate-500 text-sm mt-1">
+                                {score >= 80 ? 'Your manuscript is looking great. Just a few tweaks.' : 
+                                 score >= 60 ? 'Several issues need attention before submission.' : 
+                                 'Critical formatting errors detected. Major revision needed.'}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-6">
+                         <div className="flex gap-4 border-r border-slate-200 pr-6 mr-2">
+                             <div className="flex flex-col items-end">
+                                 <span className="text-2xl font-bold text-slate-900">{metadata?.pageCountEstimate || 0}</span>
+                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pages</span>
+                             </div>
+                             <div className="flex flex-col items-end">
+                                 <span className={`text-2xl font-bold ${criticalCount > 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                                     {criticalCount}
+                                 </span>
+                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Critical</span>
+                             </div>
+                         </div>
+                         <button 
+                            onClick={handleDownloadPdf}
+                            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-semibold transition-all shadow hover:shadow-lg active:scale-95 flex items-center gap-2"
+                        >
+                            <Printer className="w-4 h-4" />
+                            Export PDF
+                        </button>
+                    </div>
+                </div>
+
+                {/* Filters Row - Integrated into Header */}
+                <div className="flex items-center gap-2 mt-8">
+                     {[
+                        { key: 'ALL', label: 'All Findings' },
+                        { key: 'CRITICAL', label: 'Critical Issues' },
+                        { key: 'FORMATTING', label: 'Formatting' },
+                        { key: 'GRAMMAR', label: 'Grammar & Tone' }
+                    ].map((tab) => (
+                        <button
+                            key={tab.key}
+                            onClick={() => setFilter(tab.key as any)}
+                            className={`px-4 py-2 text-sm font-medium rounded-full transition-all border ${
+                                filter === tab.key 
+                                ? 'bg-slate-900 text-white border-slate-900 shadow-md' 
+                                : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                            }`}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                    
+                    {selectedSection && (
+                        <div className="ml-auto flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-semibold animate-in fade-in slide-in-from-right-5">
+                            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                            Focusing on: {selectedSection}
+                            <button onClick={() => setSelectedSection(null)} className="ml-2 hover:bg-blue-100 rounded p-0.5">
+                                <XCircle className="w-4 h-4" />
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </header>
+
+            {/* Scrollable Issues Feed */}
+            <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
+                
+                {filteredIssues.length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center text-center p-12 opacity-60">
+                        <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-6">
+                            <CheckCircle2 className="w-12 h-12 text-emerald-500" />
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-900 mb-2">Clean Sheet!</h3>
+                        <p className="text-slate-500 max-w-sm">
+                            No issues found with the current filters. Great job following the guidelines.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="max-w-4xl mx-auto space-y-4">
+                        {filteredIssues.map((issue, idx) => (
+                            <div 
+                                key={idx} 
+                                className="group bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
+                            >
+                                <div className="p-1 flex">
+                                    {/* Severity Stripe */}
+                                    <div className={`w-1.5 rounded-full my-1 ml-1 ${
+                                        issue.severity === 'HIGH' ? 'bg-rose-500' : 
+                                        issue.severity === 'MEDIUM' ? 'bg-amber-500' : 
+                                        'bg-blue-500'
+                                    }`}></div>
+
+                                    <div className="flex-1 p-5 pl-4">
+                                        <div className="flex items-start justify-between mb-3">
+                                            <div className="flex items-center gap-3">
+                                                 <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide border ${
+                                                    issue.severity === 'HIGH' ? 'bg-rose-50 text-rose-700 border-rose-100' :
+                                                    issue.severity === 'MEDIUM' ? 'bg-amber-50 text-amber-700 border-amber-100' : 
+                                                    'bg-blue-50 text-blue-700 border-blue-100'
+                                                }`}>
+                                                    {issue.severity === 'HIGH' && <AlertOctagon className="w-3 h-3" />}
+                                                    {issue.severity === 'MEDIUM' && <AlertTriangle className="w-3 h-3" />}
+                                                    {issue.severity === 'LOW' && <Info className="w-3 h-3" />}
+                                                    {issue.severity} Priority
+                                                </span>
+                                                <span className="text-slate-400 text-xs font-semibold">•</span>
+                                                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{issue.type.replace(/_/g, ' ')}</span>
+                                            </div>
+                                            
+                                            <button 
+                                                onClick={() => handleExplainIssue(issue)}
+                                                className="text-xs font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2"
+                                            >
+                                                <MessageCircle className="w-3.5 h-3.5" />
+                                                Why is this an error?
+                                            </button>
+                                        </div>
+
+                                        <h5 className="text-slate-900 font-semibold mb-2">{issue.description}</h5>
+                                        
+                                        {issue.context && (
+                                            <div className="bg-slate-50 rounded-lg p-4 border border-slate-100 mb-4 font-mono text-sm relative">
+                                                <Quote className="w-8 h-8 text-slate-200 absolute -top-3 -left-2 -z-10" />
+                                                {renderHighlightedContext(issue.context, issue.description)}
+                                            </div>
+                                        )}
+
+                                        {issue.suggestion && (
+                                            <div className="flex items-center gap-3 pt-3 border-t border-slate-50 mt-2">
+                                                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 shrink-0">
+                                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                                </div>
+                                                <span className="text-sm text-emerald-900 font-medium">
+                                                    Suggestion: <span className="font-normal text-emerald-800">{issue.suggestion}</span>
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 )}
+                
+                {/* Bottom padding to allow scrolling past FAB if needed */}
+                <div className="h-24"></div>
             </div>
         </div>
-
-        {/* Right Sidebar - Sticky */}
-        <div className="lg:col-span-4  sticky top-6">
-             {/* Required Sections Card */}
-             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 max-h-[calc(100vh-120px)] overflow-y-auto">
-                 <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-4">Required Sections</h3>
-                 <RequiredSectionsList metadata={metadata} />
-             </div>
-
-             {/* Help Card */}
-             <div className="bg-gradient-to-br mt-8  from-slate-900 to-slate-800 rounded-xl shadow-lg p-6 text-white text-center">
-                 <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
-                     <HelpCircle className="w-6 h-6 text-white" />
-                 </div>
-                 <h3 className="font-bold mb-2">Confused by the results?</h3>
-                 <p className="text-sm text-slate-300 mb-6">Our AI assistant is trained on the exact university handbook guidelines.</p>
-                 <button 
-                    onClick={() => { setChatQuery(undefined); setChatOpen(true); }}
-                    className="w-full py-2.5 bg-white text-slate-900 rounded-lg text-sm font-bold hover:bg-blue-50 transition-colors"
-                >
-                    Chat with Compliance Officer
-                 </button>
-             </div>
-        </div>
-      </div>
-      </div>
       
-      {/* Chat and FAB positioned via Portal to ensure they break out of any containers */}
+      {/* Chat and FAB positioned via Portal */}
       {createPortal(
         <>
           <ComplianceChat 
@@ -360,15 +379,13 @@ const AnalysisReport: React.FC<AnalysisReportProps> = ({ score, status, issues, 
             initialQuery={chatQuery}
           />
 
-          {/* Floating Action Button - Only shown when chat is closed */}
           {!chatOpen && (
             <button
               onClick={() => { setChatQuery(undefined); setChatOpen(true); }}
-              className="fixed bottom-6 right-8 z-[100] w-14 h-14 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-full shadow-2xl hover:shadow-blue-500/50 hover:scale-110 transition-all duration-300 flex items-center justify-center group"
+              className="fixed bottom-6 right-8 z-100 w-14 h-14 bg-slate-900 text-white rounded-full shadow-2xl hover:shadow-slate-900/50 hover:scale-110 transition-all duration-300 flex items-center justify-center group border-2 border-slate-700/50"
               aria-label="Open Compliance Assistant"
             >
               <MessageCircle className="w-6 h-6 group-hover:animate-bounce" />
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full animate-pulse border-2 border-white"></span>
             </button>
           )}
         </>,
@@ -377,12 +394,5 @@ const AnalysisReport: React.FC<AnalysisReportProps> = ({ score, status, issues, 
     </div>
   );
 };
-
-// Simple X icon component if not imported
-const XCircle = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-        <circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>
-    </svg>
-);
 
 export default AnalysisReport;

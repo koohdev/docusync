@@ -35,9 +35,9 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onBack }) => {
     };
 
     return (
-        <div className="flex flex-col h-[calc(100vh-64px)] bg-slate-50 font-sans relative">
+        <div className="flex flex-col h-[calc(100vh-8rem)] bg-slate-50 font-sans relative max-w-450 mx-auto w-full rounded-xl border border-slate-200 overflow-hidden">
             {/* Header */}
-            <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm z-10">
+            <div className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between shadow-sm z-10">
                 <div className="flex items-center gap-4">
                     <button onClick={onBack} className="p-2 -ml-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-500">
                         <ArrowLeft className="w-5 h-5" />
@@ -58,7 +58,7 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onBack }) => {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 ">
+            <div className="flex-1 overflow-y-auto p-8 ">
                 {/* Score Card */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm md:col-span-2">
